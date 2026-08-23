@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
+import type { ApexOptions } from 'apexcharts'
 import type { RaceResult, Driver } from '@/types'
 
 const props = defineProps<{ results: RaceResult[]; drivers: Driver[] }>()
@@ -17,7 +18,7 @@ const series = computed(() => [
   },
 ])
 
-const options = computed(() => ({
+const options = computed<ApexOptions>(() => ({
   chart: { type: 'bar', background: 'transparent', foreColor: '#9CA3AF', toolbar: { show: false } },
   theme: { mode: 'dark' },
   plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
