@@ -1,0 +1,13 @@
+<script setup lang="ts">
+import { useDriverStandings } from '@/composables'
+import DriverTable from '@/components/standings/DriverTable.vue'
+
+const { standings, isLoading, error, retry } = useDriverStandings(true)
+</script>
+
+<template>
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">جدول امتیازات رانندگان</h1>
+    <DriverTable :standings="standings" :is-loading="isLoading" :error="error" :on-retry="retry" />
+  </div>
+</template>
