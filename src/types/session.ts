@@ -1,11 +1,9 @@
-export type SessionStatus = 'Inactive' | 'Started' | 'Active' | 'Finished'
-export type SessionType = 'Race' | 'Qualifying' | 'Sprint' | 'Practice'
+export type SessionType = 'Race' | 'Qualifying' | 'Sprint' | 'Sprint Qualifying' | 'Practice'
 
 export interface Session {
   session_key: number
   session_name: string
   session_type: SessionType
-  status: SessionStatus
   date_start: string
   date_end: string
   gmt_offset: string
@@ -16,6 +14,7 @@ export interface Session {
   circuit_short_name: string
   meeting_key: number
   year: number
+  is_cancelled: boolean
 }
 
 export interface Meeting {
@@ -28,9 +27,12 @@ export interface Meeting {
   country_name: string
   circuit_key: number
   circuit_short_name: string
+  circuit_image?: string
   date_start: string
+  date_end: string
   gmt_offset: string
   year: number
+  is_cancelled: boolean
 }
 
 export interface RaceResult {
@@ -38,7 +40,12 @@ export interface RaceResult {
   meeting_key: number
   driver_number: number
   position: number
-  date: string
+  duration: number | number[] | null
+  gap_to_leader: number | string | number[] | null
+  number_of_laps: number
+  dnf: boolean
+  dns: boolean
+  dsq: boolean
 }
 
 export interface StartingGridEntry {
@@ -46,6 +53,7 @@ export interface StartingGridEntry {
   meeting_key: number
   driver_number: number
   position: number
+  lap_duration: number | null
 }
 
 export interface PitStop {
@@ -54,7 +62,8 @@ export interface PitStop {
   driver_number: number
   date: string
   lap_number: number
-  pit_duration: number | null
+  lane_duration: number | null
+  stop_duration: number | null
 }
 
 export interface Stint {

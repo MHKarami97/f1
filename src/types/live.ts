@@ -12,9 +12,6 @@ export interface LapData {
   i2_speed: number | null
   st_speed: number | null
   is_pit_out_lap: boolean
-  segments_sector_1: number[] | null
-  segments_sector_2: number[] | null
-  segments_sector_3: number[] | null
 }
 
 export interface Interval {
@@ -22,8 +19,8 @@ export interface Interval {
   meeting_key: number
   driver_number: number
   date: string
-  gap_to_leader: number | null
-  interval: number | null
+  gap_to_leader: number | string | null
+  interval: number | string | null
 }
 
 export interface Position {

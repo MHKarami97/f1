@@ -1,4 +1,4 @@
-export type { Driver, DriverStanding } from './driver'
+export type { Driver } from './driver'
 export type {
   Session,
   Meeting,
@@ -8,8 +8,12 @@ export type {
   Stint,
   WeatherData,
   RaceControlEvent,
-  SessionStatus,
   SessionType,
 } from './session'
-export type { DriverChampionshipEntry, TeamChampionshipEntry } from './standings'
+export type {
+  DriverChampionshipRaw,
+  TeamChampionshipRaw,
+  DriverChampionshipEntry,
+  TeamChampionshipEntry,
+} from './standings'
 export type { LapData, Interval, Position } from './live'
