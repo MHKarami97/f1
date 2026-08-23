@@ -1,3 +1,8 @@
+/**
+ * Strategy pattern: swap the polling behaviour of a composable without
+ * changing its call site. LivePollingStrategy re-fetches on a fixed
+ * interval; StaticPollingStrategy only fetches once.
+ */
 export interface PollingStrategy {
   start(callback: () => Promise<void>): void
   stop(): void
@@ -13,7 +18,6 @@ export class LivePollingStrategy implements PollingStrategy {
 
   start(callback: () => Promise<void>): void {
     this.stop()
-    // Immediate first call, then poll at fixed interval
     void callback()
     this.intervalId = setInterval(() => void callback(), this.intervalMs)
   }
@@ -27,12 +31,12 @@ export class LivePollingStrategy implements PollingStrategy {
 }
 
 export class StaticPollingStrategy implements PollingStrategy {
-  start(_callback: () => Promise<void>): void {
-    // no-op in static mode
+  start(callback: () => Promise<void>): void {
+    void callback()
   }
 
   stop(): void {
-    // no-op
+    // no-op: static mode never schedules anything to cancel
   }
 }
 

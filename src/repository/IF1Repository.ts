@@ -11,15 +11,20 @@ import type {
   LapData,
   Interval,
   Position,
-  DriverChampionshipEntry,
-  TeamChampionshipEntry,
+  DriverChampionshipRaw,
+  TeamChampionshipRaw,
 } from '@/types'
 
+/**
+ * Repository Pattern: the only contract the UI layer is allowed to depend on.
+ * No component or store may import axios or reference OpenF1 URLs directly;
+ * they talk to this interface, which OpenF1Repository fulfils.
+ */
 export interface IF1Repository {
   getDrivers(sessionKey: number): Promise<Driver[]>
   getSessions(year: number): Promise<Session[]>
   getMeetings(year: number): Promise<Meeting[]>
-  getActiveSession(): Promise<Session | null>
+  getSessionByKey(sessionKey: number): Promise<Session | null>
   getRaceResults(sessionKey: number): Promise<RaceResult[]>
   getStartingGrid(sessionKey: number): Promise<StartingGridEntry[]>
   getPitStops(sessionKey: number): Promise<PitStop[]>
@@ -29,6 +34,6 @@ export interface IF1Repository {
   getLaps(sessionKey: number, driverNumber?: number): Promise<LapData[]>
   getIntervals(sessionKey: number): Promise<Interval[]>
   getPositions(sessionKey: number): Promise<Position[]>
-  getDriverChampionship(year: number): Promise<DriverChampionshipEntry[]>
-  getTeamChampionship(year: number): Promise<TeamChampionshipEntry[]>
+  getDriverChampionship(sessionKey: number): Promise<DriverChampionshipRaw[]>
+  getTeamChampionship(sessionKey: number): Promise<TeamChampionshipRaw[]>
 }
