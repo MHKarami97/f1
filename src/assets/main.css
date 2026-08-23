@@ -16,6 +16,18 @@
   body {
     @apply antialiased;
   }
+
+  /* Belt-and-suspenders: Tailwind's `dark:` utility can lose a specificity
+     race against a plain same-element utility like `bg-white` depending on
+     generation order. These explicit rules on <body> are unconditional and
+     always win, so the page background is never ambiguous. */
+  html.dark body {
+    background-color: #15151E;
+  }
+
+  html:not(.dark) body {
+    background-color: #ffffff;
+  }
 }
 
 .tabular-nums {
