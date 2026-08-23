@@ -5,10 +5,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   base: '/',
-  plugins: [
-    vue(),
-    tailwindcss(),
-  ],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
