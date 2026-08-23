@@ -1,12 +1,8 @@
 import { computed } from 'vue'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores'
 
 export function useTheme() {
   const store = useThemeStore()
   const isDark = computed(() => store.isDark)
-
-  return {
-    isDark,
-    toggle: store.toggle,
-  }
+  return { isDark, toggle: store.toggle }
 }

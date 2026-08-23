@@ -1,10 +1,12 @@
-import { ref, onMounted } from 'vue'
-import { OpenF1Repository } from '@/repository/OpenF1Repository'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { OpenF1Repository } from '@/repository'
+import { createPollingStrategy } from '@/services'
+import type { PollingStrategy } from '@/services'
 import type { RaceResult, StartingGridEntry, PitStop, WeatherData, RaceControlEvent, Driver } from '@/types'
 
 const repo = new OpenF1Repository()
 
-export function useRaceDetail(sessionKey: number) {
+export function useRaceDetail(sessionKey: number, isLive = false) {
   const results = ref<RaceResult[]>([])
   const grid = ref<StartingGridEntry[]>([])
   const pitStops = ref<PitStop[]>([])
@@ -14,7 +16,9 @@ export function useRaceDetail(sessionKey: number) {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  async function fetch(): Promise<void> {
+  let strategy: PollingStrategy | null = null
+
+  async function fetchStaticData(): Promise<void> {
     isLoading.value = true
     error.value = null
     try {
@@ -39,7 +43,24 @@ export function useRaceDetail(sessionKey: number) {
     }
   }
 
-  onMounted(() => void fetch())
+  async function refreshLiveSlice(): Promise<void> {
+    try {
+      const [r, rc] = await Promise.all([repo.getRaceResults(sessionKey), repo.getRaceControl(sessionKey)])
+      results.value = r
+      raceControl.value = rc
+    } catch {
+      // Live refresh failures are silent by design: the last known good
+      // state stays on screen instead of flashing an error every 5s.
+    }
+  }
+
+  onMounted(async () => {
+    await fetchStaticData()
+    strategy = createPollingStrategy(isLive)
+    if (isLive) strategy.start(refreshLiveSlice)
+  })
+
+  onUnmounted(() => strategy?.stop())
 
   return { results, grid, pitStops, weather, raceControl, drivers, isLoading, error }
 }

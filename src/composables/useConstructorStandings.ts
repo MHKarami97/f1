@@ -1,14 +1,17 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useStandingsStore } from '@/stores/standingsStore'
+import { useStandingsStore } from '@/stores'
 
-export function useConstructorStandings() {
+export function useConstructorStandings(withWins = false) {
   const store = useStandingsStore()
   const { teamStandings, isLoadingTeams, teamError, topFiveTeams } = storeToRefs(store)
 
-  onMounted(() => {
+  onMounted(async () => {
     if (teamStandings.value.length === 0) {
-      void store.fetchTeamStandings()
+      await store.fetchTeamStandings()
+    }
+    if (withWins) {
+      void store.computeSeasonWins()
     }
   })
 
@@ -17,5 +20,6 @@ export function useConstructorStandings() {
     isLoading: isLoadingTeams,
     error: teamError,
     topFive: topFiveTeams,
+    retry: store.fetchTeamStandings,
   }
 }

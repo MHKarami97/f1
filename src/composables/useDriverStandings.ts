@@ -1,14 +1,17 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useStandingsStore } from '@/stores/standingsStore'
+import { useStandingsStore } from '@/stores'
 
-export function useDriverStandings() {
+export function useDriverStandings(withWins = false) {
   const store = useStandingsStore()
   const { driverStandings, isLoadingDrivers, driverError, topFiveDrivers } = storeToRefs(store)
 
-  onMounted(() => {
+  onMounted(async () => {
     if (driverStandings.value.length === 0) {
-      void store.fetchDriverStandings()
+      await store.fetchDriverStandings()
+    }
+    if (withWins) {
+      void store.computeSeasonWins()
     }
   })
 
@@ -17,5 +20,6 @@ export function useDriverStandings() {
     isLoading: isLoadingDrivers,
     error: driverError,
     topFive: topFiveDrivers,
+    retry: store.fetchDriverStandings,
   }
 }
