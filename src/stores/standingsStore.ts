@@ -1,16 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { OpenF1Repository } from '@/repository'
+import { mapWithConcurrency } from '@/services'
 import { useSessionsStore } from './sessionsStore'
 import type { DriverChampionshipEntry, TeamChampionshipEntry, Driver } from '@/types'
 
 const repo = new OpenF1Repository()
 // Counting season wins precisely means scanning every finished race's
-// session_result for position === 1, which is O(races) HTTP calls. To keep
-// the dashboard fast, wins are only computed lazily (see computeSeasonWins)
-// and capped by this constant so a long season never triggers dozens of
-// parallel requests at once.
+// session_result for position === 1. Doing this for too many races at
+// once, even with limited concurrency, is still costly, so we cap how far
+// back we look.
 const MAX_RACES_FOR_WIN_COUNT = 26
+// OpenF1's free tier 429s hard once too many requests land in the same
+// window. Capping in-flight requests to 3 keeps computeSeasonWins() under
+// that limit in practice, at the cost of taking a bit longer to resolve.
+const WIN_COUNT_CONCURRENCY = 3
 
 export const useStandingsStore = defineStore('standings', () => {
   const driverStandings = ref<DriverChampionshipEntry[]>([])
@@ -102,8 +106,9 @@ export const useStandingsStore = defineStore('standings', () => {
   /**
    * Lazily back-fills the `wins` counter by scanning session_result for every
    * finished race of the season and counting P1 finishes per driver/team.
-   * Intended to run once, only on the full standings pages (not the
-   * dashboard summary), to avoid an N+1 request burst on every page load.
+   * Requests are throttled (see WIN_COUNT_CONCURRENCY) instead of fired all
+   * at once, since OpenF1's free tier 429s a burst of 20-50 simultaneous
+   * requests -- which used to make this fail silently and leave wins at 0.
    */
   async function computeSeasonWins(): Promise<void> {
     if (winsComputed.value) return
@@ -114,31 +119,40 @@ export const useStandingsStore = defineStore('standings', () => {
 
     if (finishedRaces.length === 0) return
 
-    const winsByDriver = new Map<number, number>()
-    const winsByTeam = new Map<string, number>()
+    try {
+      const winsByDriver = new Map<number, number>()
+      const winsByTeam = new Map<string, number>()
 
-    const resultsPerRace = await Promise.all(finishedRaces.map((race) => repo.getRaceResults(race.session_key)))
-    const driversPerRace = await Promise.all(finishedRaces.map((race) => repo.getDrivers(race.session_key)))
+      const resultsPerRace = await mapWithConcurrency(finishedRaces, WIN_COUNT_CONCURRENCY, (race) =>
+        repo.getRaceResults(race.session_key),
+      )
+      const driversPerRace = await mapWithConcurrency(finishedRaces, WIN_COUNT_CONCURRENCY, (race) =>
+        repo.getDrivers(race.session_key),
+      )
 
-    resultsPerRace.forEach((results, index) => {
-      const winner = results.find((r) => r.position === 1)
-      if (!winner) return
-      winsByDriver.set(winner.driver_number, (winsByDriver.get(winner.driver_number) ?? 0) + 1)
-      const driver = driversPerRace[index].find((d) => d.driver_number === winner.driver_number)
-      if (driver) {
-        winsByTeam.set(driver.team_name, (winsByTeam.get(driver.team_name) ?? 0) + 1)
-      }
-    })
+      resultsPerRace.forEach((results, index) => {
+        const winner = results.find((r) => r.position === 1)
+        if (!winner) return
+        winsByDriver.set(winner.driver_number, (winsByDriver.get(winner.driver_number) ?? 0) + 1)
+        const driver = driversPerRace[index].find((d) => d.driver_number === winner.driver_number)
+        if (driver) {
+          winsByTeam.set(driver.team_name, (winsByTeam.get(driver.team_name) ?? 0) + 1)
+        }
+      })
 
-    driverStandings.value = driverStandings.value.map((entry) => ({
-      ...entry,
-      wins: winsByDriver.get(entry.driver_number) ?? 0,
-    }))
-    teamStandings.value = teamStandings.value.map((entry) => ({
-      ...entry,
-      wins: winsByTeam.get(entry.team_name) ?? 0,
-    }))
-    winsComputed.value = true
+      driverStandings.value = driverStandings.value.map((entry) => ({
+        ...entry,
+        wins: winsByDriver.get(entry.driver_number) ?? 0,
+      }))
+      teamStandings.value = teamStandings.value.map((entry) => ({
+        ...entry,
+        wins: winsByTeam.get(entry.team_name) ?? 0,
+      }))
+      winsComputed.value = true
+    } catch {
+      // Leave wins at 0 rather than break the standings page; winsComputed
+      // stays false so a page reload will retry.
+    }
   }
 
   return {
