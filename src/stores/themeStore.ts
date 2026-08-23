@@ -8,8 +8,8 @@ export const useThemeStore = defineStore(
 
     watch(
       isDark,
-      (val) => {
-        document.documentElement.classList.toggle('dark', val)
+      (value) => {
+        document.documentElement.classList.toggle('dark', value)
       },
       { immediate: true },
     )
