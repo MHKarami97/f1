@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@fontsource-variable/vazirmatn/index.css";
+
+@layer base {
+  * {
+    font-family: 'Vazirmatn Variable', sans-serif;
+    font-feature-settings: "tnum";
+  }
+
+  html {
+    direction: rtl;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+.tabular-nums {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
