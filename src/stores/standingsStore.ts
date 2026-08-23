@@ -97,7 +97,7 @@ export const useStandingsStore = defineStore('standings', () => {
         } satisfies TeamChampionshipEntry))
         .sort((a, b) => a.position - b.position)
     } catch {
-      teamError.value = 'داده جدول تیم\u200cها در دسترس نیست'
+      teamError.value = 'داده جدول تیم‌ها در دسترس نیست'
     } finally {
       isLoadingTeams.value = false
     }

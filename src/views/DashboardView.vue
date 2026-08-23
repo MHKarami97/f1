@@ -31,7 +31,7 @@ onMounted(() => void sessionsStore.fetchCalendar())
       </div>
       <div>
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-gray-900 dark:text-white font-semibold">جدول تیم\u200cها</h2>
+          <h2 class="text-gray-900 dark:text-white font-semibold">جدول تیم‌ها</h2>
           <RouterLink to="/teams" class="text-f1-red text-sm hover:underline">همه</RouterLink>
         </div>
         <ConstructorTable :standings="topFiveTeams" :is-loading="teamsLoading" :error="teamsError" :limit="5" :on-retry="retryTeams" />
