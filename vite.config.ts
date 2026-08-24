@@ -15,8 +15,12 @@ export default defineConfig({
       injectRegister: false,
 
       includeAssets: [
-        'favicon.svg',
-        'icon.png',
+        'icon48.png',
+        'icon72.png',
+        'icon96.png',
+        'icon144.png',
+        'icon192.png',
+        'icon512.png',
       ],
 
       manifest: {
