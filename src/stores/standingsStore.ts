@@ -18,10 +18,6 @@ export const useStandingsStore = defineStore('standings', () => {
   const driverError = ref<string | null>(null)
   const teamError = ref<string | null>(null)
   const winsComputed = ref(false)
-  // Cached separately from winsComputed so that whichever standings array
-  // gets (re)fetched *after* the season win-scan finishes still gets the
-  // right numbers instead of being stuck at the wins: 0 default that
-  // fetchDriverStandings/fetchTeamStandings set on every fresh fetch.
   let winsByDriverCache: Map<number, number> | null = null
   let winsByTeamCache: Map<string, number> | null = null
 
@@ -104,6 +100,14 @@ export const useStandingsStore = defineStore('standings', () => {
     }
   }
 
+  /**
+   * Scans every finished race of the season and counts P1 finishes per
+   * driver/team. Each race is fetched independently — OpenF1's free-tier
+   * rate limit means some of these requests (up to 2 x 26 races) can still
+   * fail after every retry, and previously a single failure threw the whole
+   * scan away silently, leaving wins stuck at 0 forever. Now a failed race
+   * is logged to the console (check DevTools) and skipped instead.
+   */
   async function computeSeasonWins(): Promise<void> {
     if (winsComputed.value) return
     const sessionsStore = useSessionsStore()
@@ -113,43 +117,41 @@ export const useStandingsStore = defineStore('standings', () => {
 
     if (finishedRaces.length === 0) return
 
-    try {
-      const winsByDriver = new Map<number, number>()
-      const winsByTeam = new Map<string, number>()
+    console.info(`[computeSeasonWins] scanning ${finishedRaces.length} finished races`)
 
-      const resultsPerRace = await mapWithConcurrency(finishedRaces, WIN_COUNT_CONCURRENCY, (race) =>
-        repo.getRaceResults(race.session_key),
-      )
-      const driversPerRace = await mapWithConcurrency(finishedRaces, WIN_COUNT_CONCURRENCY, (race) =>
-        repo.getDrivers(race.session_key),
-      )
+    const winsByDriver = new Map<number, number>()
+    const winsByTeam = new Map<string, number>()
 
-      resultsPerRace.forEach((results, index) => {
+    await mapWithConcurrency(finishedRaces, WIN_COUNT_CONCURRENCY, async (race) => {
+      try {
+        const [results, raceDrivers] = await Promise.all([
+          repo.getRaceResults(race.session_key),
+          repo.getDrivers(race.session_key),
+        ])
         const winner = results.find((r) => r.position === 1)
         if (!winner) return
         winsByDriver.set(winner.driver_number, (winsByDriver.get(winner.driver_number) ?? 0) + 1)
-        const driver = driversPerRace[index].find((d) => d.driver_number === winner.driver_number)
+        const driver = raceDrivers.find((d) => d.driver_number === winner.driver_number)
         if (driver) {
           winsByTeam.set(driver.team_name, (winsByTeam.get(driver.team_name) ?? 0) + 1)
         }
-      })
+      } catch (err) {
+        console.error(`[computeSeasonWins] failed to fetch session ${race.session_key}`, err)
+      }
+    })
 
-      winsByDriverCache = winsByDriver
-      winsByTeamCache = winsByTeam
+    winsByDriverCache = winsByDriver
+    winsByTeamCache = winsByTeam
 
-      driverStandings.value = driverStandings.value.map((entry) => ({
-        ...entry,
-        wins: winsByDriver.get(entry.driver_number) ?? 0,
-      }))
-      teamStandings.value = teamStandings.value.map((entry) => ({
-        ...entry,
-        wins: winsByTeam.get(entry.team_name) ?? 0,
-      }))
-      winsComputed.value = true
-    } catch {
-      // Leave wins at 0 rather than break the standings page; winsComputed
-      // stays false so a page reload will retry.
-    }
+    driverStandings.value = driverStandings.value.map((entry) => ({
+      ...entry,
+      wins: winsByDriver.get(entry.driver_number) ?? 0,
+    }))
+    teamStandings.value = teamStandings.value.map((entry) => ({
+      ...entry,
+      wins: winsByTeam.get(entry.team_name) ?? 0,
+    }))
+    winsComputed.value = true
   }
 
   return {

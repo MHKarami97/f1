@@ -11,6 +11,6 @@ const { standings, isLoading, error, retry } = useConstructorStandings(true)
       <span class="w-1.5 h-7 rounded-full bg-f1-red" />
       جدول امتیازات تیم‌ها
     </h1>
-    <ConstructorTable :standings="standings" :is-loading="isLoading" :error="error" :on-retry="retry" />
+    <ConstructorTable :standings="standings" :is-loading="isLoading" :error="error" :on-retry="retry" show-drivers />
   </div>
 </template>

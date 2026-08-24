@@ -1,19 +1,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { OpenF1Repository } from '@/repository'
 import { createPollingStrategy } from '@/services'
+import { CACHE_TTL } from '@/services/cache'
 import type { PollingStrategy } from '@/services'
 import type { RaceResult, StartingGridEntry, PitStop, WeatherData, RaceControlEvent, Driver } from '@/types'
 
 const repo = new OpenF1Repository()
 
-/**
- * Some OpenF1 endpoints (race_control in particular) can return a bare 404
- * instead of an empty array for sessions where that specific data category
- * was never recorded. Grouping every endpoint under one Promise.all() meant
- * a single such 404 failed the whole page even when results/grid/weather
- * had loaded fine. Wrapping each optional endpoint like this keeps only the
- * affected section empty instead of breaking the entire race detail view.
- */
 async function safeFetch<T>(promise: Promise<T[]>): Promise<T[]> {
   try {
     return await promise
@@ -34,17 +27,22 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
 
   let strategy: PollingStrategy | null = null
 
+  // A session still in progress must never be cached long-term — its
+  // results/race-control change until the chequered flag. A finished race
+  // is immutable and safe to keep for 30 days.
+  const staticTtl = isLive ? CACHE_TTL.LIVE : CACHE_TTL.HISTORICAL
+
   async function fetchStaticData(): Promise<void> {
     isLoading.value = true
     error.value = null
     try {
       const [r, g, p, w, rc, d] = await Promise.all([
-        safeFetch(repo.getRaceResults(sessionKey)),
-        safeFetch(repo.getStartingGrid(sessionKey)),
-        safeFetch(repo.getPitStops(sessionKey)),
-        safeFetch(repo.getWeather(sessionKey)),
-        safeFetch(repo.getRaceControl(sessionKey)),
-        repo.getDrivers(sessionKey),
+        safeFetch(repo.getRaceResults(sessionKey, staticTtl)),
+        safeFetch(repo.getStartingGrid(sessionKey, staticTtl)),
+        safeFetch(repo.getPitStops(sessionKey, staticTtl)),
+        safeFetch(repo.getWeather(sessionKey, staticTtl)),
+        safeFetch(repo.getRaceControl(sessionKey, staticTtl)),
+        repo.getDrivers(sessionKey, staticTtl),
       ])
       results.value = r
       grid.value = g
@@ -53,8 +51,6 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
       raceControl.value = rc
       drivers.value = d
     } catch {
-      // Only the driver roster fetch is treated as fatal here — every other
-      // section already degrades gracefully to an empty list above.
       error.value = 'جزئیات مسابقه در دسترس نیست'
     } finally {
       isLoading.value = false
@@ -63,7 +59,10 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
 
   async function refreshLiveSlice(): Promise<void> {
     try {
-      const [r, rc] = await Promise.all([safeFetch(repo.getRaceResults(sessionKey)), safeFetch(repo.getRaceControl(sessionKey))])
+      const [r, rc] = await Promise.all([
+        safeFetch(repo.getRaceResults(sessionKey, CACHE_TTL.LIVE)),
+        safeFetch(repo.getRaceControl(sessionKey, CACHE_TTL.LIVE)),
+      ])
       results.value = r
       raceControl.value = rc
     } catch {

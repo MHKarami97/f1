@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import type { DriverChampionshipEntry } from '@/types'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+import DriverAvatar from '@/components/ui/DriverAvatar.vue'
 
 const props = defineProps<{
   standings: DriverChampionshipEntry[]
@@ -55,7 +56,7 @@ function podiumRing(position: number): string {
         >
           <span class="text-2xl font-bold tabular-nums text-gray-300 dark:text-gray-600 w-8 text-center">{{ entry.position }}</span>
           <div class="w-1 h-12 rounded-full" :style="{ backgroundColor: `#${entry.team_colour}` }" />
-          <img v-if="entry.headshot_url" :src="entry.headshot_url" :alt="entry.full_name" class="w-10 h-10 rounded-full object-cover" loading="lazy" />
+          <DriverAvatar :src="entry.headshot_url" :name="entry.full_name" :team-colour="entry.team_colour" size-class="w-10 h-10" text-class="text-sm" />
           <div class="flex-1 min-w-0">
             <p class="text-gray-900 dark:text-white font-semibold text-sm truncate">{{ entry.full_name }}</p>
             <p class="text-gray-400 dark:text-gray-500 text-xs">{{ entry.team_name }}</p>
@@ -88,7 +89,7 @@ function podiumRing(position: number): string {
               <td class="px-4 py-3 text-gray-400 dark:text-gray-500 font-bold tabular-nums text-center">{{ entry.position }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <img v-if="entry.headshot_url" :src="entry.headshot_url" :alt="entry.full_name" class="w-8 h-8 rounded-full object-cover" loading="lazy" />
+                  <DriverAvatar :src="entry.headshot_url" :name="entry.full_name" :team-colour="entry.team_colour" size-class="w-8 h-8" text-class="text-[10px]" />
                   <div class="w-0.5 h-8 rounded-full" :style="{ backgroundColor: `#${entry.team_colour}` }" />
                   <div>
                     <p class="text-gray-900 dark:text-white text-sm font-semibold">{{ entry.full_name }}</p>

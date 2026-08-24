@@ -7,6 +7,7 @@ import { getSeasonDriverMap } from '@/composables/useDriverLookup'
 import type { Driver } from '@/types'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+import DriverAvatar from '@/components/ui/DriverAvatar.vue'
 
 const route = useRoute()
 const driverNumber = Number(route.params.number)
@@ -49,7 +50,7 @@ onMounted(load)
         :style="{ background: `linear-gradient(135deg, #${driver.team_colour}14, transparent)` }"
       >
         <div class="absolute top-0 left-0 w-56 h-56 rounded-full blur-3xl opacity-20" :style="{ backgroundColor: `#${driver.team_colour}` }" />
-        <img v-if="driver.headshot_url" :src="driver.headshot_url" :alt="driver.full_name" class="relative w-32 h-32 rounded-2xl object-cover border border-f1-light-border dark:border-f1-border" loading="lazy" />
+        <DriverAvatar :src="driver.headshot_url" :name="driver.full_name" :team-colour="driver.team_colour" size-class="relative w-32 h-32" round-class="rounded-2xl" text-class="text-4xl" />
         <div class="relative">
           <div class="flex items-center gap-3 mb-2">
             <h1 class="text-3xl font-black text-gray-900 dark:text-white">{{ driver.full_name }}</h1>

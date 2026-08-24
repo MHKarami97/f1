@@ -1,5 +1,5 @@
 export { httpClient } from './httpClient'
 export { createPollingStrategy, LivePollingStrategy, StaticPollingStrategy } from './polling'
 export type { PollingStrategy } from './polling'
-export { withCache } from './cache'
+export { withCache, readCache, writeCache, CACHE_TTL, clearCache } from './cache'
 export { mapWithConcurrency } from './concurrency'
