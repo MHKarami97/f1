@@ -20,9 +20,9 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: 'F1 ایران - داشبورد فرمول یک',
+        name: 'F1 | داشبورد فرمول یک',
         short_name: 'F1 ایران',
-        description: 'داشبورد اطلاعات فرمول یک به زبان فارسی، مبتنی بر OpenF1 API',
+        description: 'داشبورد اطلاعات فرمول یک به زبان فارسی',
         start_url: '/',
         scope: '/',
         id: '/',
