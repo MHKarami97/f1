@@ -40,7 +40,7 @@ function setSort(key: SortKey): void {
 
 function podiumRing(position: number): string {
   if (position === 1) return 'ring-2 ring-amber-400/50'
-  if (position === 2) return 'ring-2 ring-slate-300/40'
+  if (position === 2) return 'ring-2 ring-gray-400/60'
   if (position === 3) return 'ring-2 ring-amber-700/40'
   return ''
 }

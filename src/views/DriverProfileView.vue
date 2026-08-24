@@ -73,7 +73,7 @@ onMounted(load)
         </div>
         <div class="card p-4 text-center">
           <p class="text-gray-400 dark:text-gray-500 text-xs mb-1">تعداد برد</p>
-          <p class="text-gray-900 dark:text-white text-2xl font-bold tabular-nums">{{ standing.wins }}</p>
+          <p class="text-gray-900 dark:text-white text-2xl font-bold tabular-nums">{{ standing.wins ?? '-' }}</p>
         </div>
       </div>
     </div>
