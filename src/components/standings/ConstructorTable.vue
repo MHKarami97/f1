@@ -11,6 +11,13 @@ const props = defineProps<{
   limit?: number
   onRetry?: () => void
 }>()
+
+function podiumRing(position: number): string {
+  if (position === 1) return 'ring-2 ring-amber-400/50'
+  if (position === 2) return 'ring-2 ring-slate-300/40'
+  if (position === 3) return 'ring-2 ring-amber-700/40'
+  return ''
+}
 </script>
 
 <template>
@@ -22,7 +29,7 @@ const props = defineProps<{
         v-for="entry in (props.limit ? props.standings.slice(0, props.limit) : props.standings)"
         :key="entry.team_name"
         :to="`/teams/${encodeURIComponent(entry.team_name)}`"
-        class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border hover:border-f1-red/50 transition-colors"
+        :class="['card-hover flex items-center gap-4 p-4', podiumRing(entry.position)]"
       >
         <span class="text-xl font-bold tabular-nums text-gray-300 dark:text-gray-600 w-6 text-center">{{ entry.position }}</span>
         <div class="w-3 h-10 rounded-sm" :style="{ backgroundColor: `#${entry.team_colour}` }" />

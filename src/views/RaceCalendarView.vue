@@ -22,7 +22,10 @@ function formatDate(dateStr: string): string {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">تقویم مسابقات {{ new Date().getFullYear() }}</h1>
+    <h1 class="text-2xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+      <span class="w-1.5 h-7 rounded-full bg-f1-red" />
+      تقویم مسابقات {{ new Date().getFullYear() }}
+    </h1>
     <SkeletonLoader v-if="isLoading" :rows="10" height="h-20" />
     <ErrorBoundary v-else-if="error" :message="error" :on-retry="store.fetchCalendar" />
     <div v-else class="space-y-3">
@@ -32,13 +35,13 @@ function formatDate(dateStr: string): string {
         :is="store.sessionKeyForMeeting(meeting.meeting_key) ? RouterLink : 'div'"
         :to="store.sessionKeyForMeeting(meeting.meeting_key) ? `/race/${store.sessionKeyForMeeting(meeting.meeting_key)}` : undefined"
         :class="[
-          'flex items-center gap-4 p-5 rounded-xl border transition-colors',
+          'flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300',
           isCompleted(meeting.date_start)
-            ? 'bg-white dark:bg-f1-dark border-gray-200 dark:border-f1-border opacity-70'
-            : 'bg-gray-50 dark:bg-f1-surface border-gray-200 dark:border-f1-border hover:border-f1-red/50 cursor-pointer',
+            ? 'bg-f1-light-surface dark:bg-f1-dark border-f1-light-border dark:border-f1-border opacity-60'
+            : 'card-hover border-f1-light-border dark:border-f1-border',
         ]"
       >
-        <span class="text-3xl font-bold tabular-nums text-gray-300 dark:text-gray-700 w-8 text-center">{{ index + 1 }}</span>
+        <span class="text-3xl font-black tabular-nums text-gray-300 dark:text-gray-700 w-8 text-center">{{ index + 1 }}</span>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1">
             <h3 class="text-gray-900 dark:text-white font-semibold truncate">{{ meeting.meeting_official_name }}</h3>

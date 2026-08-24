@@ -1,22 +1,11 @@
 import type { Config } from 'tailwindcss'
 
+// Tailwind v4 reads its theme from `@theme` in src/assets/main.css (the
+// CSS-first config). This file used to duplicate the color palette here,
+// but it was never actually loaded (no `@config` import in the CSS), so it
+// silently did nothing — that mismatch was the root cause of the dark-mode
+// background bug. Kept minimal now; extend here only for JS-only features
+// (plugins, safelist) if ever needed.
 export default {
-  content: ['./index.html', './src/**/*.{vue,ts}'],
   darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        f1: {
-          red: '#E10600',
-          dark: '#15151E',
-          surface: '#1E1E2E',
-          border: '#2A2A3E',
-        },
-      },
-      fontFamily: {
-        sans: ['Vazirmatn Variable', 'sans-serif'],
-      },
-    },
-  },
-  plugins: [],
 } satisfies Config

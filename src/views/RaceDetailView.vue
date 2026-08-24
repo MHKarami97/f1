@@ -27,6 +27,13 @@ const sortedGrid = computed(() => [...grid.value].sort((a, b) => a.position - b.
 function driverName(num: number): string {
   return drivers.value.find((d) => d.driver_number === num)?.full_name ?? String(num)
 }
+
+function podiumRing(position: number): string {
+  if (position === 1) return 'ring-2 ring-amber-400/50'
+  if (position === 2) return 'ring-2 ring-slate-300/40'
+  if (position === 3) return 'ring-2 ring-amber-700/40'
+  return ''
+}
 </script>
 
 <template>
@@ -35,9 +42,16 @@ function driverName(num: number): string {
     <ErrorBoundary v-else-if="error" :message="error" />
     <template v-else>
       <section v-if="sortedResults.length > 0">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">نتایج مسابقه</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+          <span class="w-1 h-5 rounded-full bg-f1-red" />
+          نتایج مسابقه
+        </h2>
         <div class="space-y-2">
-          <div v-for="result in sortedResults" :key="result.driver_number" class="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border">
+          <div
+            v-for="result in sortedResults"
+            :key="result.driver_number"
+            :class="['card flex items-center gap-4 p-4', podiumRing(result.position)]"
+          >
             <span class="text-2xl font-bold tabular-nums text-gray-400 dark:text-gray-500 w-8 text-center">{{ result.position }}</span>
             <span class="text-gray-900 dark:text-white font-medium">{{ driverName(result.driver_number) }}</span>
           </div>
@@ -45,9 +59,12 @@ function driverName(num: number): string {
       </section>
 
       <section v-if="sortedGrid.length > 0">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">گرید شروع</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+          <span class="w-1 h-5 rounded-full bg-f1-red" />
+          گرید شروع
+        </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div v-for="entry in sortedGrid" :key="entry.driver_number" class="p-3 rounded-lg bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border text-center">
+          <div v-for="entry in sortedGrid" :key="entry.driver_number" class="card p-3 text-center">
             <p class="text-gray-400 dark:text-gray-500 text-xs mb-1">P{{ entry.position }}</p>
             <p class="text-gray-900 dark:text-white text-sm font-medium">{{ driverName(entry.driver_number) }}</p>
           </div>
@@ -55,19 +72,28 @@ function driverName(num: number): string {
       </section>
 
       <section v-if="weather.length > 0">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">آب\u200cوهوا</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+          <span class="w-1 h-5 rounded-full bg-f1-red" />
+          آب‌وهوا
+        </h2>
         <WeatherCard :weather="latestWeather" />
       </section>
 
       <PositionChart :results="results" :drivers="drivers" />
 
       <section v-if="pitStops.length > 0">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">پیت\u200cاستاپ\u200cها</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+          <span class="w-1 h-5 rounded-full bg-f1-red" />
+          پیت‌استاپ‌ها
+        </h2>
         <PitStopTable :pit-stops="pitStops" :drivers="drivers" />
       </section>
 
       <section v-if="raceControl.length > 0">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">رویدادهای مدیریت مسابقه</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+          <span class="w-1 h-5 rounded-full bg-f1-red" />
+          رویدادهای مدیریت مسابقه
+        </h2>
         <RaceControlEvents :events="raceControl" />
       </section>
     </template>

@@ -18,8 +18,12 @@ function flagColor(flag: string | null): string {
 </script>
 
 <template>
-  <div class="space-y-2 max-h-80 overflow-y-auto">
-    <div v-for="(event, i) in events" :key="i" class="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border">
+  <div class="space-y-2 max-h-80 overflow-y-auto pe-1">
+    <div
+      v-for="(event, i) in events"
+      :key="i"
+      class="card flex items-start gap-3 p-3 hover:border-f1-red/30 transition-colors duration-200"
+    >
       <span :class="['w-2 h-2 rounded-full mt-1.5 flex-shrink-0', flagColor(event.flag)]" />
       <div class="flex-1 min-w-0">
         <p class="text-gray-700 dark:text-gray-200 text-sm">{{ event.message }}</p>

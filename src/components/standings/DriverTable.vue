@@ -32,6 +32,13 @@ function setSort(key: SortKey): void {
     sortAsc.value = true
   }
 }
+
+function podiumRing(position: number): string {
+  if (position === 1) return 'ring-2 ring-amber-400/50'
+  if (position === 2) return 'ring-2 ring-slate-300/40'
+  if (position === 3) return 'ring-2 ring-amber-700/40'
+  return ''
+}
 </script>
 
 <template>
@@ -44,7 +51,7 @@ function setSort(key: SortKey): void {
           v-for="entry in sorted"
           :key="entry.driver_number"
           :to="`/drivers/${entry.driver_number}`"
-          class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border hover:border-f1-red/50 transition-colors"
+          :class="['card-hover flex items-center gap-3 p-4', podiumRing(entry.position)]"
         >
           <span class="text-2xl font-bold tabular-nums text-gray-300 dark:text-gray-600 w-8 text-center">{{ entry.position }}</span>
           <div class="w-1 h-12 rounded-full" :style="{ backgroundColor: `#${entry.team_colour}` }" />
@@ -60,22 +67,22 @@ function setSort(key: SortKey): void {
         </RouterLink>
       </div>
 
-      <div class="hidden md:block overflow-hidden rounded-xl border border-gray-200 dark:border-f1-border">
+      <div class="hidden md:block card overflow-hidden">
         <table class="w-full">
-          <thead class="bg-gray-50 dark:bg-f1-surface">
+          <thead class="bg-f1-light-surface-2 dark:bg-f1-surface-2">
             <tr>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer" @click="setSort('position')">رتبه</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-f1-red transition-colors" @click="setSort('position')">رتبه</th>
               <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">راننده</th>
               <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">تیم</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer" @click="setSort('points')">امتیاز</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer" @click="setSort('wins')">برد</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-f1-red transition-colors" @click="setSort('points')">امتیاز</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-f1-red transition-colors" @click="setSort('wins')">برد</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-f1-border">
+          <tbody class="divide-y divide-f1-light-border dark:divide-f1-border">
             <tr
               v-for="entry in sorted"
               :key="entry.driver_number"
-              class="bg-white dark:bg-f1-dark hover:bg-gray-50 dark:hover:bg-f1-surface transition-colors cursor-pointer"
+              :class="['bg-f1-light-surface dark:bg-f1-surface hover:bg-f1-light-surface-2 dark:hover:bg-f1-surface-2 transition-colors cursor-pointer', podiumRing(entry.position)]"
               @click="router.push(`/drivers/${entry.driver_number}`)"
             >
               <td class="px-4 py-3 text-gray-400 dark:text-gray-500 font-bold tabular-nums text-center">{{ entry.position }}</td>

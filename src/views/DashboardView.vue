@@ -24,15 +24,21 @@ onMounted(() => void sessionsStore.fetchCalendar())
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-gray-900 dark:text-white font-semibold">جدول امتیازات رانندگان</h2>
-          <RouterLink to="/drivers" class="text-f1-red text-sm hover:underline">مشاهده همه</RouterLink>
+          <h2 class="text-gray-900 dark:text-white font-bold text-lg flex items-center gap-2">
+            <span class="w-1 h-5 rounded-full bg-f1-red" />
+            جدول امتیازات رانندگان
+          </h2>
+          <RouterLink to="/drivers" class="text-f1-red text-sm font-medium hover:underline">مشاهده همه</RouterLink>
         </div>
         <DriverTable :standings="topFiveDrivers" :is-loading="driversLoading" :error="driversError" :limit="5" :on-retry="retryDrivers" />
       </div>
       <div>
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-gray-900 dark:text-white font-semibold">جدول تیم‌ها</h2>
-          <RouterLink to="/teams" class="text-f1-red text-sm hover:underline">همه</RouterLink>
+          <h2 class="text-gray-900 dark:text-white font-bold text-lg flex items-center gap-2">
+            <span class="w-1 h-5 rounded-full bg-f1-red" />
+            جدول تیم‌ها
+          </h2>
+          <RouterLink to="/teams" class="text-f1-red text-sm font-medium hover:underline">همه</RouterLink>
         </div>
         <ConstructorTable :standings="topFiveTeams" :is-loading="teamsLoading" :error="teamsError" :limit="5" :on-retry="retryTeams" />
       </div>

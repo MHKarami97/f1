@@ -6,6 +6,22 @@ import type { RaceResult, StartingGridEntry, PitStop, WeatherData, RaceControlEv
 
 const repo = new OpenF1Repository()
 
+/**
+ * Some OpenF1 endpoints (race_control in particular) can return a bare 404
+ * instead of an empty array for sessions where that specific data category
+ * was never recorded. Grouping every endpoint under one Promise.all() meant
+ * a single such 404 failed the whole page even when results/grid/weather
+ * had loaded fine. Wrapping each optional endpoint like this keeps only the
+ * affected section empty instead of breaking the entire race detail view.
+ */
+async function safeFetch<T>(promise: Promise<T[]>): Promise<T[]> {
+  try {
+    return await promise
+  } catch {
+    return []
+  }
+}
+
 export function useRaceDetail(sessionKey: number, isLive = false) {
   const results = ref<RaceResult[]>([])
   const grid = ref<StartingGridEntry[]>([])
@@ -23,11 +39,11 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
     error.value = null
     try {
       const [r, g, p, w, rc, d] = await Promise.all([
-        repo.getRaceResults(sessionKey),
-        repo.getStartingGrid(sessionKey),
-        repo.getPitStops(sessionKey),
-        repo.getWeather(sessionKey),
-        repo.getRaceControl(sessionKey),
+        safeFetch(repo.getRaceResults(sessionKey)),
+        safeFetch(repo.getStartingGrid(sessionKey)),
+        safeFetch(repo.getPitStops(sessionKey)),
+        safeFetch(repo.getWeather(sessionKey)),
+        safeFetch(repo.getRaceControl(sessionKey)),
         repo.getDrivers(sessionKey),
       ])
       results.value = r
@@ -37,6 +53,8 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
       raceControl.value = rc
       drivers.value = d
     } catch {
+      // Only the driver roster fetch is treated as fatal here — every other
+      // section already degrades gracefully to an empty list above.
       error.value = 'جزئیات مسابقه در دسترس نیست'
     } finally {
       isLoading.value = false
@@ -45,12 +63,11 @@ export function useRaceDetail(sessionKey: number, isLive = false) {
 
   async function refreshLiveSlice(): Promise<void> {
     try {
-      const [r, rc] = await Promise.all([repo.getRaceResults(sessionKey), repo.getRaceControl(sessionKey)])
+      const [r, rc] = await Promise.all([safeFetch(repo.getRaceResults(sessionKey)), safeFetch(repo.getRaceControl(sessionKey))])
       results.value = r
       raceControl.value = rc
     } catch {
-      // Live refresh failures are silent by design: the last known good
-      // state stays on screen instead of flashing an error every 5s.
+      // Live refresh failures are silent by design.
     }
   }
 

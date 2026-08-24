@@ -2,6 +2,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @import "@fontsource-variable/vazirmatn/index.css";
 
+@theme {
+  --color-f1-red: #E10600;
+  --color-f1-red-dark: #A30500;
+  --color-f1-red-light: #FF3B30;
+  --color-f1-gold: #D4AF37;
+
+  --color-f1-dark: #0B0B12;
+  --color-f1-surface: #16161F;
+  --color-f1-surface-2: #1D1D29;
+  --color-f1-border: #2A2A38;
+
+  --color-f1-light: #F5F6FA;
+  --color-f1-light-surface: #FFFFFF;
+  --color-f1-light-surface-2: #EFEFF5;
+  --color-f1-light-border: #E4E5EE;
+
+  --font-sans: 'Vazirmatn Variable', sans-serif;
+}
+
 @layer base {
   * {
     font-family: 'Vazirmatn Variable', sans-serif;
@@ -14,23 +33,91 @@
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased bg-f1-light text-gray-900 dark:bg-f1-dark dark:text-gray-100 transition-colors duration-300;
   }
 
-  /* Belt-and-suspenders: Tailwind's `dark:` utility can lose a specificity
-     race against a plain same-element utility like `bg-white` depending on
-     generation order. These explicit rules on <body> are unconditional and
-     always win, so the page background is never ambiguous. */
-  html.dark body {
-    background-color: #15151E;
+  ::selection {
+    @apply bg-f1-red/30;
   }
 
-  html:not(.dark) body {
-    background-color: #ffffff;
+  :focus-visible {
+    outline: 2px solid var(--color-f1-red);
+    outline-offset: 2px;
   }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-f1-light-surface-2 dark:bg-f1-surface;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-f1-red/60 rounded-full;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-f1-red;
+  }
+}
+
+/*
+ * Tailwind v4 custom utilities. Unlike `@layer components` classes in v3,
+ * these are registered as real utilities — which is what lets them be used
+ * with `dark:`/`hover:` variants elsewhere AND be referenced from other
+ * @apply rules (e.g. card-hover applying card). A plain `@layer components`
+ * class is not "known" to @apply in v4, which is exactly what caused the
+ * "Cannot apply unknown utility class `card`" build error.
+ */
+@utility card {
+  @apply rounded-2xl bg-f1-light-surface dark:bg-f1-surface border border-f1-light-border dark:border-f1-border transition-colors duration-300;
+}
+
+@utility card-hover {
+  @apply card hover:border-f1-red/50 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-f1-red/5 transition-all duration-300;
+}
+
+@utility stripe-top {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-f1-red) 0%, var(--color-f1-red-light) 50%, var(--color-f1-red) 100%);
+  }
+}
+
+@utility checkered-corner {
+  background-image: conic-gradient(var(--color-f1-light-border) 90deg, transparent 90deg 180deg, var(--color-f1-light-border) 180deg 270deg, transparent 270deg);
+  background-size: 16px 16px;
+
+  .dark & {
+    background-image: conic-gradient(var(--color-f1-border) 90deg, transparent 90deg 180deg, var(--color-f1-border) 180deg 270deg, transparent 270deg);
+  }
+}
+
+@utility text-gradient-red {
+  background: linear-gradient(90deg, var(--color-f1-red), var(--color-f1-red-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility glow-red {
+  box-shadow: 0 0 0 1px rgba(225, 6, 0, 0.15), 0 8px 24px -8px rgba(225, 6, 0, 0.35);
 }
 
 .tabular-nums {
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

@@ -3,17 +3,11 @@ import { ref, computed } from 'vue'
 import { OpenF1Repository } from '@/repository'
 import { mapWithConcurrency } from '@/services'
 import { useSessionsStore } from './sessionsStore'
-import type { DriverChampionshipEntry, TeamChampionshipEntry, Driver } from '@/types'
+import { getSeasonDriverMap } from '@/composables/useDriverLookup'
+import type { DriverChampionshipEntry, TeamChampionshipEntry } from '@/types'
 
 const repo = new OpenF1Repository()
-// Counting season wins precisely means scanning every finished race's
-// session_result for position === 1. Doing this for too many races at
-// once, even with limited concurrency, is still costly, so we cap how far
-// back we look.
 const MAX_RACES_FOR_WIN_COUNT = 26
-// OpenF1's free tier 429s hard once too many requests land in the same
-// window. Capping in-flight requests to 3 keeps computeSeasonWins() under
-// that limit in practice, at the cost of taking a bit longer to resolve.
 const WIN_COUNT_CONCURRENCY = 3
 
 export const useStandingsStore = defineStore('standings', () => {
@@ -24,6 +18,12 @@ export const useStandingsStore = defineStore('standings', () => {
   const driverError = ref<string | null>(null)
   const teamError = ref<string | null>(null)
   const winsComputed = ref(false)
+  // Cached separately from winsComputed so that whichever standings array
+  // gets (re)fetched *after* the season win-scan finishes still gets the
+  // right numbers instead of being stuck at the wins: 0 default that
+  // fetchDriverStandings/fetchTeamStandings set on every fresh fetch.
+  let winsByDriverCache: Map<number, number> | null = null
+  let winsByTeamCache: Map<string, number> | null = null
 
   const topFiveDrivers = computed(() => driverStandings.value.slice(0, 5))
   const topFiveTeams = computed(() => teamStandings.value.slice(0, 5))
@@ -40,16 +40,14 @@ export const useStandingsStore = defineStore('standings', () => {
         return
       }
 
-      const [raw, drivers] = await Promise.all([
+      const [raw, driverMap] = await Promise.all([
         repo.getDriverChampionship(raceSession.session_key),
-        repo.getDrivers(raceSession.session_key),
+        getSeasonDriverMap(),
       ])
-
-      const driverByNumber = new Map<number, Driver>(drivers.map((d) => [d.driver_number, d]))
 
       driverStandings.value = raw
         .map((entry) => {
-          const driver = driverByNumber.get(entry.driver_number)
+          const driver = driverMap.get(entry.driver_number)
           return {
             position: entry.position_current,
             driver_number: entry.driver_number,
@@ -60,7 +58,7 @@ export const useStandingsStore = defineStore('standings', () => {
             team_colour: driver?.team_colour ?? '666666',
             headshot_url: driver?.headshot_url ?? null,
             points: entry.points_current,
-            wins: 0,
+            wins: winsByDriverCache?.get(entry.driver_number) ?? 0,
           } satisfies DriverChampionshipEntry
         })
         .sort((a, b) => a.position - b.position)
@@ -83,9 +81,12 @@ export const useStandingsStore = defineStore('standings', () => {
         return
       }
 
-      const raw = await repo.getTeamChampionship(raceSession.session_key)
-      const drivers = await repo.getDrivers(raceSession.session_key)
-      const colourByTeam = new Map<string, string>(drivers.map((d) => [d.team_name, d.team_colour]))
+      const [raw, driverMap] = await Promise.all([
+        repo.getTeamChampionship(raceSession.session_key),
+        getSeasonDriverMap(),
+      ])
+      const colourByTeam = new Map<string, string>()
+      driverMap.forEach((driver) => colourByTeam.set(driver.team_name, driver.team_colour))
 
       teamStandings.value = raw
         .map((entry) => ({
@@ -93,7 +94,7 @@ export const useStandingsStore = defineStore('standings', () => {
           team_name: entry.team_name,
           team_colour: colourByTeam.get(entry.team_name) ?? '666666',
           points: entry.points_current,
-          wins: 0,
+          wins: winsByTeamCache?.get(entry.team_name) ?? 0,
         } satisfies TeamChampionshipEntry))
         .sort((a, b) => a.position - b.position)
     } catch {
@@ -103,13 +104,6 @@ export const useStandingsStore = defineStore('standings', () => {
     }
   }
 
-  /**
-   * Lazily back-fills the `wins` counter by scanning session_result for every
-   * finished race of the season and counting P1 finishes per driver/team.
-   * Requests are throttled (see WIN_COUNT_CONCURRENCY) instead of fired all
-   * at once, since OpenF1's free tier 429s a burst of 20-50 simultaneous
-   * requests -- which used to make this fail silently and leave wins at 0.
-   */
   async function computeSeasonWins(): Promise<void> {
     if (winsComputed.value) return
     const sessionsStore = useSessionsStore()
@@ -139,6 +133,9 @@ export const useStandingsStore = defineStore('standings', () => {
           winsByTeam.set(driver.team_name, (winsByTeam.get(driver.team_name) ?? 0) + 1)
         }
       })
+
+      winsByDriverCache = winsByDriver
+      winsByTeamCache = winsByTeam
 
       driverStandings.value = driverStandings.value.map((entry) => ({
         ...entry,

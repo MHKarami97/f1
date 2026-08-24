@@ -21,16 +21,17 @@ const series = computed(() => [
 const options = computed<ApexOptions>(() => ({
   chart: { type: 'bar', background: 'transparent', foreColor: '#9CA3AF', toolbar: { show: false } },
   theme: { mode: 'dark' },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+  plotOptions: { bar: { borderRadius: 6, columnWidth: '55%' } },
   colors: ['#E10600'],
+  dataLabels: { enabled: false },
   yaxis: { reversed: true, title: { text: 'پوزیشن' }, min: 1 },
-  grid: { borderColor: '#2A2A3E' },
+  grid: { borderColor: '#2A2A38' },
   tooltip: { theme: 'dark' },
 }))
 </script>
 
 <template>
-  <div v-if="results.length > 0" class="rounded-xl bg-gray-50 dark:bg-f1-surface border border-gray-200 dark:border-f1-border p-5">
+  <div v-if="results.length > 0" class="card p-5">
     <h3 class="text-gray-400 dark:text-gray-500 text-xs font-semibold uppercase tracking-widest mb-4">پوزیشن پایانی رانندگان</h3>
     <VueApexCharts type="bar" :options="options" :series="series" height="300" />
   </div>
