@@ -106,7 +106,7 @@ function driverPath(driverNumber: number): string {
           <p
             class="text-2xl font-black tabular-nums text-gray-900 dark:text-white md:text-3xl"
           >
-            {{ team.wins }}
+            {{ team.wins ?? '-' }}
           </p>
         </div>
       </section>
