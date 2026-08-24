@@ -1,46 +1,41 @@
-import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from 'axios'
 
 const MAX_RETRIES = 6
-const BASE_RETRY_DELAY_MS = 1000
-// OpenF1's free tier enforces a per-IP rate limit. Spacing every outgoing
-// request by at least this many ms -- regardless of which store/composable
-// triggered it -- is what actually keeps us under that limit; retrying
-// after a 429 alone isn't enough once several parts of the app fire
-// requests in the same tick (e.g. season-wins aggregation).
-const MIN_REQUEST_INTERVAL_MS = 250
+const BASE_RETRY_DELAY_MS = 1_000
+const MAX_RETRY_DELAY_MS = 60_000
+const MIN_REQUEST_INTERVAL_MS = 1_000
 
 interface RetryConfig extends InternalAxiosRequestConfig {
   _retryCount?: number
 }
 
-/**
- * Serializes request dispatch with a minimum spacing between any two
- * outgoing requests, app-wide. Implemented as a promise chain so callers
- * queue up in order instead of racing a shared timestamp.
- */
 class RequestScheduler {
   private tail: Promise<void> = Promise.resolve()
   private lastDispatchAt = 0
 
   schedule(): Promise<void> {
     const next = this.tail.then(async () => {
-      const waitMs = Math.max(0, this.lastDispatchAt + MIN_REQUEST_INTERVAL_MS - Date.now())
+      const waitMs = Math.max(
+        0,
+        this.lastDispatchAt + MIN_REQUEST_INTERVAL_MS - Date.now(),
+      )
+
       if (waitMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, waitMs))
       }
+
       this.lastDispatchAt = Date.now()
     })
-    this.tail = next
+
+    this.tail = next.catch(() => undefined)
     return next
   }
 }
 
-/**
- * Singleton wrapper around a single Axios instance.
- * The whole app must share one HTTP client so retry/backoff behaviour,
- * request pacing, and base configuration stay consistent everywhere
- * (Singleton pattern).
- */
 class HttpClient {
   private static instance: HttpClient
   readonly client: AxiosInstance
@@ -49,8 +44,10 @@ class HttpClient {
   private constructor() {
     this.client = axios.create({
       baseURL: 'https://api.openf1.org/v1',
-      timeout: 15_000,
-      headers: { 'Content-Type': 'application/json' },
+      timeout: 20_000,
+      headers: {
+        Accept: 'application/json',
+      },
     })
 
     this.client.interceptors.request.use(async (config) => {
@@ -62,31 +59,38 @@ class HttpClient {
       (response) => response,
       async (error: AxiosError) => {
         const config = error.config as RetryConfig | undefined
-        if (!config) return Promise.reject(error)
+
+        if (!config) {
+          return Promise.reject(error)
+        }
 
         config._retryCount = config._retryCount ?? 0
 
         const status = error.response?.status
-        const isNonRetryableStatus = status === 404 || status === 401
-        const canRetry = !isNonRetryableStatus && config._retryCount < MAX_RETRIES
+        const isRateLimited = status === 429
+        const isServerError = status !== undefined && status >= 500
+        const isRetryable = isRateLimited || isServerError
 
-        if (canRetry) {
-          config._retryCount += 1
-
-          // Respect the server's Retry-After if it sent one (standard for 429
-          // responses); otherwise fall back to exponential backoff.
-          const retryAfterHeader = error.response?.headers?.['retry-after']
-          const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : null
-          const backoffMs =
-            retryAfterMs && !Number.isNaN(retryAfterMs)
-              ? retryAfterMs
-              : BASE_RETRY_DELAY_MS * 2 ** (config._retryCount - 1)
-
-          await new Promise((resolve) => setTimeout(resolve, backoffMs))
-          return this.client(config)
+        if (!isRetryable || config._retryCount >= MAX_RETRIES) {
+          // Do not use console.error here. The caller can handle the error
+          // without polluting the browser console.
+          return Promise.reject(error)
         }
 
-        return Promise.reject(error)
+        config._retryCount += 1
+
+        const retryAfter = getRetryAfterMs(error)
+        const exponentialDelay = Math.min(
+          BASE_RETRY_DELAY_MS * 2 ** (config._retryCount - 1),
+          MAX_RETRY_DELAY_MS,
+        )
+
+        const jitter = Math.floor(Math.random() * 750)
+        const delay = Math.max(retryAfter ?? exponentialDelay, 1_000) + jitter
+
+        await sleep(delay)
+
+        return this.client(config)
       },
     )
   }
@@ -95,8 +99,39 @@ class HttpClient {
     if (!HttpClient.instance) {
       HttpClient.instance = new HttpClient()
     }
+
     return HttpClient.instance
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function getRetryAfterMs(error: AxiosError): number | null {
+  const value = error.response?.headers?.['retry-after']
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value * 1_000
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const seconds = Number(value)
+
+  if (Number.isFinite(seconds)) {
+    return seconds * 1_000
+  }
+
+  const date = Date.parse(value)
+
+  if (!Number.isNaN(date)) {
+    return Math.max(0, date - Date.now())
+  }
+
+  return null
 }
 
 export const httpClient = HttpClient.getInstance().client
