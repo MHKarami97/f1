@@ -22,7 +22,11 @@ const sortAsc = ref(true)
 
 const sorted = computed(() => {
   const data = props.limit ? props.standings.slice(0, props.limit) : [...props.standings]
-  return data.sort((a, b) => (a[sortKey.value] - b[sortKey.value]) * (sortAsc.value ? 1 : -1))
+  return data.sort((a, b) => {
+    const av = a[sortKey.value] ?? 0
+    const bv = b[sortKey.value] ?? 0
+    return (av - bv) * (sortAsc.value ? 1 : -1)
+  })
 })
 
 function setSort(key: SortKey): void {
