@@ -28,7 +28,7 @@ export interface DriverChampionshipEntry {
   team_colour: string
   headshot_url: string | null
   points: number
-  wins: number
+  wins: number | null
 }
 
 export interface TeamChampionshipEntry {
@@ -36,5 +36,5 @@ export interface TeamChampionshipEntry {
   team_name: string
   team_colour: string
   points: number
-  wins: number
+  wins: number | null
 }

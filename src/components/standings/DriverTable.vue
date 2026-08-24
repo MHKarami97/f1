@@ -99,7 +99,7 @@ function podiumRing(position: number): string {
               </td>
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{{ entry.team_name }}</td>
               <td class="px-4 py-3 text-gray-900 dark:text-white font-bold tabular-nums">{{ entry.points }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 tabular-nums">{{ entry.wins }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 tabular-nums">{{ entry.wins ?? '-' }}</td>
             </tr>
           </tbody>
         </table>

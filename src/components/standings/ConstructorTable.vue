@@ -58,7 +58,7 @@ function podiumRing(position: number): string {
           <div class="w-3 h-10 rounded-sm" :style="{ backgroundColor: `#${entry.team_colour}` }" />
           <div class="flex-1 min-w-0">
             <p class="text-gray-900 dark:text-white font-semibold text-sm truncate">{{ entry.team_name }}</p>
-            <p class="text-gray-400 dark:text-gray-500 text-xs">{{ entry.wins }} برد</p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs">{{ entry.wins ?? '-' }} برد</p>
           </div>
           <p class="text-gray-900 dark:text-white font-bold tabular-nums text-lg">{{ entry.points }}</p>
         </RouterLink>

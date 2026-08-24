@@ -10,8 +10,8 @@ import DriverTable from '@/components/standings/DriverTable.vue'
 import ConstructorTable from '@/components/standings/ConstructorTable.vue'
 
 const sessionsStore = useSessionsStore()
-const { isLoading: driversLoading, error: driversError, topFive: topFiveDrivers, retry: retryDrivers } = useDriverStandings()
-const { isLoading: teamsLoading, error: teamsError, topFive: topFiveTeams, retry: retryTeams } = useConstructorStandings()
+const { isLoading: driversLoading, error: driversError, topFive: topFiveDrivers, retry: retryDrivers } = useDriverStandings(true)
+const { isLoading: teamsLoading, error: teamsError, topFive: topFiveTeams, retry: retryTeams } = useConstructorStandings(true)
 
 onMounted(() => void sessionsStore.fetchCalendar())
 </script>

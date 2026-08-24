@@ -54,7 +54,7 @@ export const useStandingsStore = defineStore('standings', () => {
             team_colour: driver?.team_colour ?? '666666',
             headshot_url: driver?.headshot_url ?? null,
             points: entry.points_current,
-            wins: winsByDriverCache?.get(entry.driver_number) ?? 0,
+            wins: winsByDriverCache?.get(entry.driver_number) ?? null,
           } satisfies DriverChampionshipEntry
         })
         .sort((a, b) => a.position - b.position)
@@ -90,7 +90,7 @@ export const useStandingsStore = defineStore('standings', () => {
           team_name: entry.team_name,
           team_colour: colourByTeam.get(entry.team_name) ?? '666666',
           points: entry.points_current,
-          wins: winsByTeamCache?.get(entry.team_name) ?? 0,
+          wins: winsByTeamCache?.get(entry.team_name) ?? null,
         } satisfies TeamChampionshipEntry))
         .sort((a, b) => a.position - b.position)
     } catch {
@@ -145,11 +145,11 @@ export const useStandingsStore = defineStore('standings', () => {
 
     driverStandings.value = driverStandings.value.map((entry) => ({
       ...entry,
-      wins: winsByDriver.get(entry.driver_number) ?? 0,
+      wins: winsByDriver.get(entry.driver_number) ?? null,
     }))
     teamStandings.value = teamStandings.value.map((entry) => ({
       ...entry,
-      wins: winsByTeam.get(entry.team_name) ?? 0,
+      wins: winsByTeam.get(entry.team_name) ?? null,
     }))
     winsComputed.value = true
   }
