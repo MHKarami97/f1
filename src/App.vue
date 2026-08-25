@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import UpdatePrompt from '@/components/UpdatePrompt.vue'
 
 // Dark mode is applied once, at the html-element level, by themeStore's
 // watcher (see src/stores/themeStore.ts). Keeping a single source of truth
@@ -14,5 +15,6 @@ import AppFooter from '@/components/layout/AppFooter.vue'
       <RouterView />
     </main>
     <AppFooter />
+    <UpdatePrompt />
   </div>
 </template>
