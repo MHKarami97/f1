@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { resolve } from "node:path";
 
 export default defineConfig({
   base: "/",
@@ -12,8 +11,6 @@ export default defineConfig({
 
     VitePWA({
       registerType: "prompt",
-      injectRegister: false,
-
       includeAssets: [
         "icon48.png",
         "icon72.png",
@@ -22,7 +19,6 @@ export default defineConfig({
         "icon192.png",
         "icon512.png",
       ],
-
       manifest: {
         name: "F1 | داشبورد فرمول یک",
         short_name: "F1 ایران",
@@ -81,13 +77,9 @@ export default defineConfig({
           },
         ],
       },
-
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
+        globPatterns: ["**/*.{js,css,html,png,svg,woff2}"],
         cleanupOutdatedCaches: true,
-        navigateFallback: "/index.html",
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.openf1\.org\/.*/,
@@ -105,20 +97,6 @@ export default defineConfig({
           },
         ],
       },
-
-      devOptions: {
-        enabled: false,
-      },
     }),
   ],
-
-  resolve: {
-    alias: {
-      "@": resolve(__dirname, "src"),
-    },
-  },
-
-  build: {
-    target: "es2020",
-  },
 });

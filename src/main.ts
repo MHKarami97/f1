@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPersistedState from 'pinia-plugin-persistedstate'
 import VueApexCharts from 'vue3-apexcharts'
-import { registerSW } from 'virtual:pwa-register'
 import '@fontsource-variable/vazirmatn'
 import './assets/main.css'
 import App from './App.vue'
@@ -18,5 +17,3 @@ createApp(App)
   .use(i18n)
   .use(VueApexCharts)
   .mount('#app')
-
-registerSW({ immediate: true })
