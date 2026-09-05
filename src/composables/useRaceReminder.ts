@@ -30,15 +30,41 @@ function writeStoredState(state: StoredReminderState): void {
   }
 }
 
+/** True only when launched as an installed PWA/TWA, never in a plain browser tab. */
+function detectInstalledApp(): boolean {
+  const isStandaloneDisplay = ['fullscreen', 'standalone', 'minimal-ui'].some(
+    (mode) => window.matchMedia(`(display-mode: ${mode})`).matches,
+  )
+  const isIosHomeScreen = (window.navigator as { standalone?: boolean }).standalone === true
+  const isAndroidTwa = document.referrer.startsWith('android-app://')
+  return isStandaloneDisplay || isIosHomeScreen || isAndroidTwa
+}
+
 export function useRaceReminder(meeting: () => Meeting | null) {
+  const isInstalledApp = ref(detectInstalledApp())
   const isSupported = ref(
-    'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+    isInstalledApp.value &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window,
   )
   const isSubscribing = ref(false)
   const error = ref<string | null>(null)
   const permission = ref<NotificationPermission>(
     'Notification' in window ? Notification.permission : 'denied',
   )
+
+  // Re-check once the display mode can actually change at runtime (e.g. user
+  // installs the PWA while the tab stays open) so the button can appear
+  // without a full reload.
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', () => {
+    isInstalledApp.value = detectInstalledApp()
+    isSupported.value =
+      isInstalledApp.value &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window
+  })
 
   const stored = readStoredState()
   const remindOneDayBefore = ref(stored?.remindOneDayBefore ?? true)
@@ -48,6 +74,16 @@ export function useRaceReminder(meeting: () => Meeting | null) {
     const current = meeting()
     return !!current && stored?.meetingKey === current.meeting_key && permission.value === 'granted'
   })
+
+  function describeSubscribeError(err: unknown): string {
+    if (err instanceof ReminderApiNotConfiguredError) {
+      return 'سرویس یادآوری هنوز پیکربندی نشده است.'
+    }
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return 'اتصال به سرویس اعلان برقرار نشد — ممکن است اینترنت یا مرورگر شما دسترسی به سرویس‌های پوش (Google/Microsoft) را مسدود کرده باشد. اتصال یا فیلترشکن خود را بررسی کنید.'
+    }
+    return 'خطا در فعال‌سازی یادآور. دوباره تلاش کنید.'
+  }
 
   async function subscribe(): Promise<void> {
     const current = meeting()
@@ -88,10 +124,7 @@ export function useRaceReminder(meeting: () => Meeting | null) {
         remindOneHourBefore: remindOneHourBefore.value,
       })
     } catch (err) {
-      error.value =
-        err instanceof ReminderApiNotConfiguredError
-          ? 'سرویس یادآوری هنوز پیکربندی نشده است.'
-          : 'خطا در فعال‌سازی یادآور. دوباره تلاش کنید.'
+      error.value = describeSubscribeError(err)
       console.error('[useRaceReminder] subscribe failed', err)
     } finally {
       isSubscribing.value = false
@@ -119,6 +152,7 @@ export function useRaceReminder(meeting: () => Meeting | null) {
   }
 
   return {
+    isInstalledApp,
     isSupported,
     isSubscribing,
     isSubscribedForCurrentRace,

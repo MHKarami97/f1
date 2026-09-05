@@ -8,6 +8,7 @@ const sessionsStore = useSessionsStore()
 const { nextMeeting } = storeToRefs(sessionsStore)
 
 const {
+  isInstalledApp,
   isSupported,
   isSubscribing,
   isSubscribedForCurrentRace,
@@ -27,7 +28,7 @@ const buttonLabel = computed(() => {
 </script>
 
 <template>
-  <div v-if="nextMeeting" class="mt-4 flex flex-col items-end gap-3">
+  <div v-if="nextMeeting && isInstalledApp" class="mt-4 flex flex-col items-end gap-3">
     <div class="flex w-full flex-wrap items-center justify-end gap-3">
       <button
         v-if="!isSubscribedForCurrentRace"
