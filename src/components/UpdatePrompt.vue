@@ -1,60 +1,55 @@
 <script setup lang="ts">
-import { useRegisterSW } from "virtual:pwa-register/vue";
+
+import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 const { needRefresh, updateServiceWorker } = useRegisterSW({
-  onRegistered(r) {
-    // Polling Pattern: بررسی دوره‌ای آپدیت برای تب‌های باز طولانی‌مدت
-    if (r) {
-      setInterval(
-        () => {
-          r.update().catch((err) => {
-            console.error("خطا در بررسی بروزرسانی Service Worker:", err);
-          });
-        },
-        60 * 60 * 1000,
-      ); // هر یک ساعت
+  onRegistered(registration) {
+    // Polling pattern: check for a new SW build once per hour while the tab is open.
+    if (registration) {
+      setInterval(() => {
+        registration.update().catch((err) => console.error('[UpdatePrompt] SW update check failed', err))
+      }, 60 * 60 * 1000)
     }
   },
   onRegisterError(error) {
-    console.error("خطا در ثبت Service Worker:", error);
+    console.error('[UpdatePrompt] Service Worker registration failed', error)
   },
-});
+})
 
-// کپسوله‌سازی منطق بستن مودال
-const closePrompt = () => {
-  needRefresh.value = false;
-};
+function closePrompt(): void {
+  needRefresh.value = false
+}
 </script>
 
 <template>
-  <!-- استفاده از Teleport یک Best Practice در Vue برای عناصر Fixed است -->
+  <!-- Teleport so this overlay is never clipped by an ancestor's overflow/transform. -->
   <Teleport to="body">
     <Transition name="fade-slide">
       <div
         v-if="needRefresh"
-        class="fixed bottom-6 left-1/2 z-[100] w-[90%] max-w-sm -translate-x-1/2 rounded-2xl border border-line/50 bg-paper p-4 shadow-2xl dark:border-night-line dark:bg-night sm:bottom-10"
         dir="rtl"
+        class="card fixed inset-x-4 bottom-6 z-100 mx-auto w-auto max-w-sm rounded-2xl p-4 shadow-2xl sm:inset-x-auto sm:right-6 sm:bottom-10 sm:w-90"
       >
-        <div
-          class="mb-4 text-center text-[13.5px] font-medium leading-relaxed text-ink dark:text-night-ink"
-        >
-          نسخه جدیدی آماده است!
-          <br />
-          <span class="text-[11px] text-ink-2 dark:text-night-ink-2">
-            برای اعمال تغییرات، صفحه را بروزرسانی کنید.
+        <div class="mb-4 text-center">
+          <p class="text-13.5px font-medium leading-relaxed text-gray-900 dark:text-white">
+            نسخهٔ جدیدی از اپلیکیشن در دسترس است!
+          </p>
+          <span class="text-11px text-gray-400 dark:text-gray-500">
+            برای دریافت آخرین تغییرات، صفحه را به‌روزرسانی کنید.
           </span>
         </div>
-
         <div class="flex justify-center gap-3">
           <button
+            type="button"
+            class="rounded-lg bg-f1-red px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-f1-red-dark"
             @click="updateServiceWorker(true)"
-            class="rounded-lg bg-blue-600 px-6 py-2 text-sm text-white transition hover:bg-blue-700"
           >
-            بروزرسانی
+            به‌روزرسانی
           </button>
           <button
+            type="button"
+            class="rounded-lg border border-f1-light-border px-6 py-2 text-sm text-gray-700 transition-colors hover:bg-f1-light-surface-2 dark:border-f1-border dark:text-gray-300 dark:hover:bg-f1-surface-2"
             @click="closePrompt"
-            class="rounded-lg border border-gray-300 px-6 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             بعداً
           </button>
@@ -72,6 +67,6 @@ const closePrompt = () => {
 .fade-slide-enter-from,
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translate(-50%, 20px);
+  transform: translate(0, 20px);
 }
 </style>
