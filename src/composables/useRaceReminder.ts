@@ -1,8 +1,3 @@
-/**
- * FINAL — src/composables/useRaceReminder.ts
- * Same shape as useDriverStandings.ts / useConstructorStandings.ts:
- * reactive refs + action functions, no Vue-specific state in the service layer.
- */
 import { computed, ref } from 'vue'
 import type { Meeting } from '../types'
 import {
@@ -51,7 +46,7 @@ export function useRaceReminder(meeting: () => Meeting | null) {
 
   const isSubscribedForCurrentRace = computed(() => {
     const current = meeting()
-    return !!current && stored?.meetingKey === current.meetingkey && permission.value === 'granted'
+    return !!current && stored?.meetingKey === current.meeting_key && permission.value === 'granted'
   })
 
   async function subscribe(): Promise<void> {
@@ -81,14 +76,14 @@ export function useRaceReminder(meeting: () => Meeting | null) {
 
       await repository.subscribe({
         subscription: subscription.toJSON(),
-        meetingKey: current.meetingkey,
-        raceStartIso: current.datestart,
+        meetingKey: current.meeting_key,
+        raceStartIso: current.date_start,
         remindOneDayBefore: remindOneDayBefore.value,
         remindOneHourBefore: remindOneHourBefore.value,
       })
 
       writeStoredState({
-        meetingKey: current.meetingkey,
+        meetingKey: current.meeting_key,
         remindOneDayBefore: remindOneDayBefore.value,
         remindOneHourBefore: remindOneHourBefore.value,
       })
@@ -112,7 +107,7 @@ export function useRaceReminder(meeting: () => Meeting | null) {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
-        await getReminderRepository().unsubscribe(subscription.endpoint, current.meetingkey)
+        await getReminderRepository().unsubscribe(subscription.endpoint, current.meeting_key)
         await subscription.unsubscribe()
       }
       localStorage.removeItem(LOCAL_STORAGE_KEY)
