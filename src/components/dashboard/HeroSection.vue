@@ -45,8 +45,7 @@ const countdownItems = computed(() => [
 </script>
 
 <template>
-  <div class="stripe-top relative overflow-hidden rounded-2xl bg-gradient-to-br from-f1-light-surface to-f1-light-surface-2 dark:from-f1-surface dark:to-f1-dark border border-f1-light-border dark:border-f1-border p-6 md:p-10 mb-8">
-    <NotifyRaceButton />
+  <div class="stripe-top relative overflow-hidden rounded-2xl bg-gradient-to-br from-f1-light-surface to-f1-light-surface-2 dark:from-f1-surface dark:to-f1-dark border border-f1-light-border dark:border-f1-border p-6 md:p-10 mb-8">    
     <div class="absolute top-0 left-0 w-72 h-72 bg-f1-red/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2" />
     <div class="absolute bottom-0 right-0 w-56 h-56 bg-f1-red/5 rounded-full blur-3xl translate-y-1/3 translate-x-1/4" />
     <div class="checkered-corner absolute top-4 left-4 w-10 h-10 rounded-md opacity-60" />
@@ -75,5 +74,6 @@ const countdownItems = computed(() => [
         </div>
       </template>
     </div>
+    <NotifyRaceButton />
   </div>
 </template>

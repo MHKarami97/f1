@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * src/components/dashboard/NotifyRaceButton.vue
- *
- * Positioning note: this site is dir="rtl", so a physical "left" position
- * must be expressed with the logical `justify-end` utility (RTL's "end" of
- * the main axis is the visual left), not `justify-start`/`left-*`, which
- * would put it on the right instead.
- */
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSessionsStore } from '../../stores'
@@ -41,7 +33,7 @@ const buttonLabel = computed(() => {
         v-if="!isSubscribedForCurrentRace"
         type="button"
         :disabled="isSubscribing || !isSupported"
-        class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-f1-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-f1-red-dark disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-f1-red px-5 py-2.5 text-sm font-semibold leading-none text-white transition-colors hover:bg-f1-red-dark disabled:cursor-not-allowed disabled:opacity-50"
         @click="subscribe"
       >
         <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,16 +44,16 @@ const buttonLabel = computed(() => {
             d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .53-.21 1.04-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
           />
         </svg>
-        {{ buttonLabel }}
+        <span class="leading-none">{{ buttonLabel }}</span>
       </button>
 
       <button
         v-else
         type="button"
-        class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-f1-light-border bg-f1-light-surface px-5 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:border-f1-red hover:text-f1-red dark:border-f1-border dark:bg-f1-dark dark:text-gray-300"
+        class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-f1-light-border bg-f1-light-surface px-5 py-2.5 text-sm font-semibold leading-none text-gray-600 transition-colors hover:border-f1-red hover:text-f1-red dark:border-f1-border dark:bg-f1-dark dark:text-gray-300"
         @click="unsubscribe"
       >
-        لغو یادآور
+        <span class="leading-none">لغو یادآور</span>
       </button>
     </div>
 
@@ -69,13 +61,13 @@ const buttonLabel = computed(() => {
       v-if="!isSubscribedForCurrentRace"
       class="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2"
     >
-      <label class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <label class="flex items-center gap-1.5 text-xs leading-none text-gray-500 dark:text-gray-400">
         <input v-model="remindOneDayBefore" type="checkbox" class="accent-f1-red" />
-        یک روز قبل
+        <span class="leading-none">یک روز قبل</span>
       </label>
-      <label class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <label class="flex items-center gap-1.5 text-xs leading-none text-gray-500 dark:text-gray-400">
         <input v-model="remindOneHourBefore" type="checkbox" class="accent-f1-red" />
-        یک ساعت قبل
+        <span class="leading-none">یک ساعت قبل</span>
       </label>
     </div>
 
