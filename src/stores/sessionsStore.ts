@@ -48,6 +48,14 @@ export const useSessionsStore = defineStore('sessions', () => {
     return upcoming[0] ?? null
   })
 
+  const nextRaceSession = computed<Session | null>(() => {
+    const t = now()
+    const upcoming = raceSessions.value
+      .filter((s) => new Date(s.date_start) > t)
+      .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
+    return upcoming[0] ?? null
+  })
+
   const pastMeetings = computed(() => {
     const t = now()
     return meetings.value.filter((m) => new Date(m.date_start) <= t).slice().reverse()
@@ -108,6 +116,7 @@ export const useSessionsStore = defineStore('sessions', () => {
     currentSession,
     isLive,
     nextMeeting,
+    nextRaceSession,
     pastMeetings,
     sessionKeyForMeeting,
     fetchCalendar,
