@@ -6,7 +6,7 @@ import type { Meeting, Session } from '@/types'
 
 const repo = new OpenF1Repository()
 const CURRENT_YEAR = new Date().getFullYear()
-const REALTIME_DATA_ENABLED = false
+const REALTIME_DATA_ENABLED = true
 const CALENDAR_CACHE_KEY = `calendar:${CURRENT_YEAR}`
 
 interface CalendarCachePayload {
@@ -43,7 +43,7 @@ export const useSessionsStore = defineStore('sessions', () => {
   const nextMeeting = computed<Meeting | null>(() => {
     const t = now()
     const upcoming = meetings.value
-      .filter((m) => new Date(m.date_start) > t)
+      .filter((m) => new Date(m.date_end) > t)
       .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
     return upcoming[0] ?? null
   })

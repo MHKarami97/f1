@@ -13,10 +13,11 @@ import PitStopTable from '@/components/race/PitStopTable.vue'
 
 const route = useRoute()
 const sessionKey = Number(route.params.sessionKey)
+const REALTIME_DATA_ENABLED = false
 
 const sessionsStore = useSessionsStore()
-const { isLive, currentSession } = storeToRefs(sessionsStore)
-const isThisSessionLive = computed(() => isLive.value && currentSession.value?.session_key === sessionKey)
+const { currentSession } = storeToRefs(sessionsStore)
+const isThisSessionLive = computed(() => REALTIME_DATA_ENABLED && currentSession.value?.session_key === sessionKey)
 
 const { results, grid, pitStops, weather, raceControl, drivers, isLoading, error } = useRaceDetail(sessionKey, isThisSessionLive.value)
 
