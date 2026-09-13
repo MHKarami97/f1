@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import {
   getBrowserPushManager,
   getReminderRepository,
@@ -46,7 +46,7 @@ function detectInstalledApp(): boolean {
   return isStandaloneDisplay || isIosHomeScreen || isAndroidTwa
 }
 
-export function useRaceReminder(target: RaceReminderTarget | null) {
+export function useRaceReminder(target: MaybeRefOrGetter<RaceReminderTarget | null>) {
   const isInstalledApp = ref(detectInstalledApp())
   const isSupported = ref(
     isInstalledApp.value && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
@@ -64,7 +64,7 @@ export function useRaceReminder(target: RaceReminderTarget | null) {
   const timings = ref<ReminderTiming[]>(stored?.timings ?? DEFAULT_TIMINGS)
 
   const isSubscribedForCurrentRace = computed(() => {
-    const current = target
+    const current = toValue(target)
     return !!current && stored?.meetingKey === current.meetingKey && permission.value === 'granted'
   })
 
@@ -77,7 +77,7 @@ export function useRaceReminder(target: RaceReminderTarget | null) {
   }
 
   async function subscribe(): Promise<void> {
-    const current = target
+    const current = toValue(target)
     if (!current) {
       error.value = 'مسابقه‌ی بعدی هنوز مشخص نیست.'
       return
@@ -116,7 +116,7 @@ export function useRaceReminder(target: RaceReminderTarget | null) {
   }
 
   async function unsubscribe(): Promise<void> {
-    const current = target
+    const current = toValue(target)
     if (!current) return
     isSubscribing.value = true
     try {

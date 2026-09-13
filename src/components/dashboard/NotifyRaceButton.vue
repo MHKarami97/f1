@@ -26,7 +26,7 @@ const {
   error,
   subscribe,
   unsubscribe,
-} = useRaceReminder(reminderTarget.value)
+} = useRaceReminder(reminderTarget)
 
 const buttonLabel = computed(() => {
   if (isSubscribedForCurrentRace.value) return 'یادآوری فعال است'
