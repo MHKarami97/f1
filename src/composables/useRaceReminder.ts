@@ -60,12 +60,13 @@ export function useRaceReminder(target: MaybeRefOrGetter<RaceReminderTarget | nu
     isSupported.value = isInstalledApp.value && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
   })
 
-  const stored = readStoredState()
-  const timings = ref<ReminderTiming[]>(stored?.timings ?? DEFAULT_TIMINGS)
+  const initialStored = readStoredState()
+  const storedMeetingKey = ref<number | null>(initialStored?.meetingKey ?? null)
+  const timings = ref<ReminderTiming[]>(initialStored?.timings ?? DEFAULT_TIMINGS)
 
   const isSubscribedForCurrentRace = computed(() => {
     const current = toValue(target)
-    return !!current && stored?.meetingKey === current.meetingKey && permission.value === 'granted'
+    return !!current && storedMeetingKey.value === current.meetingKey && permission.value === 'granted'
   })
 
   function describeSubscribeError(err: unknown): string {
@@ -73,7 +74,8 @@ export function useRaceReminder(target: MaybeRefOrGetter<RaceReminderTarget | nu
     if (err instanceof DOMException && err.name === 'AbortError') {
       return 'مرورگر اجازه‌ی دریافت نوتیفیکیشن (Google/Microsoft) را نداد.'
     }
-    return 'ثبت یادآوری با خطا مواجه شد. دوباره تلاش کنید.'
+    const detail = err instanceof Error ? err.message : String(err)
+    return `ثبت یادآوری با خطا مواجه شد: ${detail}`
   }
 
   async function subscribe(): Promise<void> {
@@ -107,6 +109,7 @@ export function useRaceReminder(target: MaybeRefOrGetter<RaceReminderTarget | nu
       })
 
       writeStoredState({ meetingKey: current.meetingKey, timings: timings.value })
+      storedMeetingKey.value = current.meetingKey
     } catch (err) {
       error.value = describeSubscribeError(err)
       console.error('useRaceReminder subscribe failed', err)
@@ -127,6 +130,7 @@ export function useRaceReminder(target: MaybeRefOrGetter<RaceReminderTarget | nu
         await subscription.unsubscribe()
       }
       localStorage.removeItem(LOCAL_STORAGE_KEY)
+      storedMeetingKey.value = null
     } catch (err) {
       console.error('useRaceReminder unsubscribe failed', err)
     } finally {
