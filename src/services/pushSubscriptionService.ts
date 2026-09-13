@@ -1,22 +1,12 @@
-/**
- * FINAL — src/services/pushSubscriptionService.ts
- *
- * Repository pattern, mirrors src/repository/IF1Repository.ts +
- * OpenF1Repository.ts already in the codebase: an interface decouples
- * "how we persist a reminder" from the UI/composable, the concrete class
- * talks to the Cloudflare Worker over HTTP. BrowserPushManager is a
- * separate class (Single Responsibility) that only ever touches the
- * browser's Push API, never the backend.
- */
+export type ReminderTiming = 'oneDayBefore' | 'oneHourBefore' | 'atStart'
 
 export interface RaceReminderPreferences {
-  remindOneDayBefore: boolean
-  remindOneHourBefore: boolean
+  timings: ReminderTiming[]
 }
 
 export interface SubscribeReminderPayload extends RaceReminderPreferences {
   subscription: PushSubscriptionJSON
-  meetingKey: number
+  meetingKey: number  
   raceStartIso: string
 }
 
@@ -27,7 +17,6 @@ export interface IReminderRepository {
 
 const REMINDER_API_BASE = import.meta.env.VITE_PUSH_API_BASE_URL as string | undefined
 
-/** Thrown when the Worker endpoint has not been configured yet (see .env). */
 export class ReminderApiNotConfiguredError extends Error {
   constructor() {
     super('VITE_PUSH_API_BASE_URL is not set — the reminder backend is not deployed.')
@@ -80,23 +69,18 @@ export class BrowserPushManager {
     const registration = await navigator.serviceWorker.ready
     const existing = await registration.pushManager.getSubscription()
     if (existing) return existing
-
     return registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
     })
   }
 
-  /** VAPID keys are base64url-encoded; PushManager needs a raw Uint8Array. */
-    /** VAPID keys are base64url-encoded; PushManager needs a raw Uint8Array<ArrayBuffer>. */
   private urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
     const rawData = window.atob(base64)
     const output = new Uint8Array(rawData.length)
-    for (let i = 0; i < rawData.length; i++) {
-      output[i] = rawData.charCodeAt(i)
-    }
+    for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i)
     return output
   }
 }

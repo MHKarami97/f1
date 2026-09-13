@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useSessionsStore } from '../../stores'
-import { useRaceReminder } from '../../composables/useRaceReminder'
+import { useSessionsStore } from '@/stores'
+import { useRaceReminder, type RaceReminderTarget } from '@/composables/useRaceReminder'
+import ReminderTimingDropdown from '@/components/ui/ReminderTimingDropdown.vue'
 
 const sessionsStore = useSessionsStore()
-const { nextMeeting } = storeToRefs(sessionsStore)
+const { nextMeeting, nextRaceSession } = storeToRefs(sessionsStore)
+
+const reminderTarget = computed<RaceReminderTarget | null>(() => {
+  if (!nextMeeting.value || !nextRaceSession.value) return null
+  return {
+    meetingKey: nextMeeting.value.meeting_key,
+    raceStartIso: nextRaceSession.value.date_start,
+  }
+})
 
 const {
   isInstalledApp,
@@ -13,23 +22,24 @@ const {
   isSubscribing,
   isSubscribedForCurrentRace,
   permission,
-  remindOneDayBefore,
-  remindOneHourBefore,
+  timings,
   error,
   subscribe,
   unsubscribe,
-} = useRaceReminder(() => nextMeeting.value)
+} = useRaceReminder(reminderTarget.value)
 
 const buttonLabel = computed(() => {
-  if (isSubscribedForCurrentRace.value) return 'یادآور فعال است'
-  if (isSubscribing.value) return 'در حال فعال‌سازی...'
-  return 'اعلام مسابقه'
+  if (isSubscribedForCurrentRace.value) return 'یادآوری فعال است'
+  if (isSubscribing.value) return 'در حال ثبت...'
+  return 'یادآوری مسابقه'
 })
 </script>
 
 <template>
   <div v-if="nextMeeting && isInstalledApp" class="mt-4 flex flex-col items-end gap-3">
     <div class="flex w-full flex-wrap items-center justify-end gap-3">
+      <ReminderTimingDropdown v-if="!isSubscribedForCurrentRace" v-model="timings" />
+
       <button
         v-if="!isSubscribedForCurrentRace"
         type="button"
@@ -54,32 +64,15 @@ const buttonLabel = computed(() => {
         class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-f1-light-border bg-f1-light-surface px-5 py-2.5 text-sm font-semibold leading-none text-gray-600 transition-colors hover:border-f1-red hover:text-f1-red dark:border-f1-border dark:bg-f1-dark dark:text-gray-300"
         @click="unsubscribe"
       >
-        <span class="leading-none">لغو یادآور</span>
+        <span class="leading-none">لغو یادآوری</span>
       </button>
     </div>
 
-    <div
-      v-if="!isSubscribedForCurrentRace"
-      class="flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-2"
-    >
-      <label class="flex items-center gap-1.5 text-xs leading-none text-gray-500 dark:text-gray-400">
-        <input v-model="remindOneDayBefore" type="checkbox" class="accent-f1-red" />
-        <span class="leading-none">یک روز قبل</span>
-      </label>
-      <label class="flex items-center gap-1.5 text-xs leading-none text-gray-500 dark:text-gray-400">
-        <input v-model="remindOneHourBefore" type="checkbox" class="accent-f1-red" />
-        <span class="leading-none">یک ساعت قبل</span>
-      </label>
-    </div>
-
     <p v-if="!isSupported" class="w-full text-left text-xs text-gray-400 dark:text-gray-500">
-      مرورگر یا دستگاه شما از اعلان پوش پشتیبانی نمی‌کند.
+      مرورگر شما از نوتیفیکیشن پشتیبانی نمی‌کند.
     </p>
-    <p
-      v-else-if="permission === 'denied'"
-      class="w-full text-left text-xs text-gray-400 dark:text-gray-500"
-    >
-      دسترسی اعلان قبلاً رد شده؛ از تنظیمات مرورگر آن را فعال کنید.
+    <p v-else-if="permission === 'denied'" class="w-full text-left text-xs text-gray-400 dark:text-gray-500">
+      دسترسی نوتیفیکیشن مسدود شده — از تنظیمات مرورگر فعالش کنید.
     </p>
     <p v-if="error" class="w-full text-left text-xs text-f1-red">{{ error }}</p>
   </div>

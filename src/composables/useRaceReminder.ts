@@ -1,17 +1,24 @@
 import { computed, ref } from 'vue'
-import type { Meeting } from '../types'
 import {
   getBrowserPushManager,
   getReminderRepository,
   ReminderApiNotConfiguredError,
-  type RaceReminderPreferences,
+  type ReminderTiming,
 } from '../services/pushSubscriptionService'
 
-const LOCAL_STORAGE_KEY = 'f1-race-reminder-v1'
-
-interface StoredReminderState extends RaceReminderPreferences {
+export interface RaceReminderTarget {
   meetingKey: number
+  raceStartIso: string
 }
+
+const LOCAL_STORAGE_KEY = 'f1-race-reminder-v2'
+
+interface StoredReminderState {
+  meetingKey: number
+  timings: ReminderTiming[]
+}
+
+const DEFAULT_TIMINGS: ReminderTiming[] = ['oneDayBefore', 'oneHourBefore']
 
 function readStoredState(): StoredReminderState | null {
   try {
@@ -30,7 +37,6 @@ function writeStoredState(state: StoredReminderState): void {
   }
 }
 
-/** True only when launched as an installed PWA/TWA, never in a plain browser tab. */
 function detectInstalledApp(): boolean {
   const isStandaloneDisplay = ['fullscreen', 'standalone', 'minimal-ui'].some(
     (mode) => window.matchMedia(`(display-mode: ${mode})`).matches,
@@ -40,112 +46,89 @@ function detectInstalledApp(): boolean {
   return isStandaloneDisplay || isIosHomeScreen || isAndroidTwa
 }
 
-export function useRaceReminder(meeting: () => Meeting | null) {
+export function useRaceReminder(target: RaceReminderTarget | null) {
   const isInstalledApp = ref(detectInstalledApp())
   const isSupported = ref(
-    isInstalledApp.value &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window,
+    isInstalledApp.value && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
   )
   const isSubscribing = ref(false)
   const error = ref<string | null>(null)
-  const permission = ref<NotificationPermission>(
-    'Notification' in window ? Notification.permission : 'denied',
-  )
+  const permission = ref<NotificationPermission>('Notification' in window ? Notification.permission : 'denied')
 
-  // Re-check once the display mode can actually change at runtime (e.g. user
-  // installs the PWA while the tab stays open) so the button can appear
-  // without a full reload.
   window.matchMedia('(display-mode: standalone)').addEventListener('change', () => {
     isInstalledApp.value = detectInstalledApp()
-    isSupported.value =
-      isInstalledApp.value &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
+    isSupported.value = isInstalledApp.value && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
   })
 
   const stored = readStoredState()
-  const remindOneDayBefore = ref(stored?.remindOneDayBefore ?? true)
-  const remindOneHourBefore = ref(stored?.remindOneHourBefore ?? true)
+  const timings = ref<ReminderTiming[]>(stored?.timings ?? DEFAULT_TIMINGS)
 
   const isSubscribedForCurrentRace = computed(() => {
-    const current = meeting()
-    return !!current && stored?.meetingKey === current.meeting_key && permission.value === 'granted'
+    const current = target
+    return !!current && stored?.meetingKey === current.meetingKey && permission.value === 'granted'
   })
 
   function describeSubscribeError(err: unknown): string {
-    if (err instanceof ReminderApiNotConfiguredError) {
-      return 'سرویس یادآوری هنوز پیکربندی نشده است.'
-    }
+    if (err instanceof ReminderApiNotConfiguredError) return 'سرویس یادآوری هنوز روی سرور راه‌اندازی نشده است.'
     if (err instanceof DOMException && err.name === 'AbortError') {
-      return 'اتصال به سرویس اعلان برقرار نشد — ممکن است اینترنت یا مرورگر شما دسترسی به سرویس‌های پوش (Google/Microsoft) را مسدود کرده باشد. اتصال یا فیلترشکن خود را بررسی کنید.'
+      return 'مرورگر اجازه‌ی دریافت نوتیفیکیشن (Google/Microsoft) را نداد.'
     }
-    return 'خطا در فعال‌سازی یادآور. دوباره تلاش کنید.'
+    return 'ثبت یادآوری با خطا مواجه شد. دوباره تلاش کنید.'
   }
 
   async function subscribe(): Promise<void> {
-    const current = meeting()
+    const current = target
     if (!current) {
-      error.value = 'مسابقه بعدی مشخص نیست.'
+      error.value = 'مسابقه‌ی بعدی هنوز مشخص نیست.'
       return
     }
-    if (!remindOneDayBefore.value && !remindOneHourBefore.value) {
-      error.value = 'حداقل یکی از یادآورها را انتخاب کنید.'
+    if (timings.value.length === 0) {
+      error.value = 'حداقل یک زمان یادآوری را انتخاب کنید.'
       return
     }
 
     isSubscribing.value = true
     error.value = null
-
     try {
       const pushManager = getBrowserPushManager()
       permission.value = await pushManager.requestPermission()
       if (permission.value !== 'granted') {
-        error.value = 'دسترسی اعلان رد شد.'
+        error.value = 'اجازه‌ی ارسال نوتیفیکیشن داده نشد.'
         return
       }
 
       const subscription = await pushManager.getOrCreateSubscription()
       const repository = getReminderRepository()
-
       await repository.subscribe({
         subscription: subscription.toJSON(),
-        meetingKey: current.meeting_key,
-        raceStartIso: current.date_start,
-        remindOneDayBefore: remindOneDayBefore.value,
-        remindOneHourBefore: remindOneHourBefore.value,
+        meetingKey: current.meetingKey,
+        raceStartIso: current.raceStartIso,
+        timings: timings.value,
       })
 
-      writeStoredState({
-        meetingKey: current.meeting_key,
-        remindOneDayBefore: remindOneDayBefore.value,
-        remindOneHourBefore: remindOneHourBefore.value,
-      })
+      writeStoredState({ meetingKey: current.meetingKey, timings: timings.value })
     } catch (err) {
       error.value = describeSubscribeError(err)
-      console.error('[useRaceReminder] subscribe failed', err)
+      console.error('useRaceReminder subscribe failed', err)
     } finally {
       isSubscribing.value = false
     }
   }
 
   async function unsubscribe(): Promise<void> {
-    const current = meeting()
+    const current = target
     if (!current) return
-
     isSubscribing.value = true
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
-        await getReminderRepository().unsubscribe(subscription.endpoint, current.meeting_key)
+        await getReminderRepository().unsubscribe(subscription.endpoint, current.meetingKey)
         await subscription.unsubscribe()
       }
       localStorage.removeItem(LOCAL_STORAGE_KEY)
     } catch (err) {
-      console.error('[useRaceReminder] unsubscribe failed', err)
+      console.error('useRaceReminder unsubscribe failed', err)
     } finally {
       isSubscribing.value = false
     }
@@ -157,8 +140,7 @@ export function useRaceReminder(meeting: () => Meeting | null) {
     isSubscribing,
     isSubscribedForCurrentRace,
     permission,
-    remindOneDayBefore,
-    remindOneHourBefore,
+    timings,
     error,
     subscribe,
     unsubscribe,
